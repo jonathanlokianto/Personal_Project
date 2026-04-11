@@ -55,7 +55,7 @@ export default function Navbar() {
                                         Agenda
                                     </NavLink>
                                     <NavLink
-                                        href="/Chatbot"
+                                        href={route("chatbot.index")}
                                         active={url === "/chatbot"}
                                     >
                                         Chatbot

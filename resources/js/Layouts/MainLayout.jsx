@@ -14,7 +14,7 @@ export default function MainLayout({ children }) {
                 <main className="bg-white flex grow flex-col py-8">
                     <div className="mx-auto w-full px-4 sm:px-6 lg:px-8 min-w-[320px] flex flex-col grow">
                             <FlashNotification />
-                        <div className="bg-gray-200 rounded-xl p-6 sm:p-10 shadow-inner grow">
+                        <div className="bg-gray-200 rounded-xl p-6 sm:p-10 shadow-inner flex grow">
                             {children}
                         </div>
                     </div>

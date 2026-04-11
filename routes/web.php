@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AgendaController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\TagController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -25,3 +26,4 @@ Route::get('/test-flash', fn() => back()->with([
 );
 
 Route::resource('/tag', TagController::class);
+Route::resource('/chatbot', MessageController::class);

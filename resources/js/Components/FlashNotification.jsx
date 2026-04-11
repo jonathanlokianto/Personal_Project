@@ -6,20 +6,15 @@ export default function () {
     const [flashNotification, setFlashNotification] = useState([]);
     const timeout = 5000;
 
-    useEffect(() => {
-        if (flash.message) {
-            const id = Date.now();
+    const addNotification = (message, type = "positive") => {
+        const id = Date.now();
 
-            setFlashNotification((prev) => [
-                ...prev,
-                { id: id, type: flash.type, message: flash.message },
-            ]);
+        setFlashNotification((prev) => [...prev, { id, type, message }]);
 
-            const timer = setTimeout(() => {
-                removeFlashNotification(id);
-            }, timeout);
-        }
-    }, [flash.message]);
+        setTimeout(() => {
+            removeFlashNotification(id);
+        }, timeout);
+    };
 
     const removeFlashNotification = (flashidToRemove) => {
         setFlashNotification((prev) =>
@@ -27,12 +22,27 @@ export default function () {
         );
     };
 
+    useEffect(() => {
+        if (flash?.message) {
+            addNotification(flash.message, flash.type);
+        }
+    }, [flash]);
+
+    useEffect(() => {
+        if (window.Echo) {
+            window.Echo.channel("notification-channel").listen(
+                "RealtimeNotification",
+                (e) => {
+                    addNotification(e.message, e.type);
+                },
+            );
+            return () => window.Echo.leave("notification-channel");
+        }
+    }, []);
+
     if (flashNotification.length === 0) {
         return null;
     }
-    // return !flashNotification && null;
-
-    console.log("message sent!");
     return (
         <div className="flex fixed flex-col top-4 right-4 z-50 items-end gap-2 pointer-events-auto cursor-default">
             {flashNotification.map((notif) => (
