@@ -31,7 +31,7 @@ export default function () {
     useEffect(() => {
         if (window.Echo) {
             window.Echo.channel("notification-channel").listen(
-                "RealtimeNotification",
+                ".RealtimeNotification",
                 (e) => {
                     addNotification(e.message, e.type);
                 },
@@ -57,6 +57,9 @@ export default function () {
                     onClick={() => removeFlashNotification(notif.id)}
                 >
                     <span className="font-medium">{notif.message}</span>
+                    <button className="ml-4 text-white/70 hover:text-white font-bold text-sm">
+                        ✕
+                    </button>
                 </div>
             ))}
         </div>

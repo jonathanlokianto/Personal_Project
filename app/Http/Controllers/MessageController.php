@@ -12,7 +12,10 @@ class MessageController extends Controller
      */
     public function index()
     {
-        return inertia('Chatbot/Index');
+        $chat = Message::latest()->take(30)->get()->reverse()->values();
+        return inertia('Chatbot/Index', [
+            'chatHistory' => $chat,
+        ]);
     }
 
     /**
@@ -30,10 +33,10 @@ class MessageController extends Controller
     {
         $validated = $request->validate([            
             'role' => 'required|in:user,assistant',
-            'content_message'=> 'required|string'
+            'message_content'=> 'required|string'
         ]);
 
-        $message = Message::create($validated);
+        Message::create($validated);
         return redirect()->back();
     }
 

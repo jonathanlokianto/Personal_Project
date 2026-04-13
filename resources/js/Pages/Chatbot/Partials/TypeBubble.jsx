@@ -1,7 +1,8 @@
 import { router, useForm } from "@inertiajs/react";
+import { useEffect } from "react";
 
 export default function TypeBubble() {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         message_content: "",
         role: "user",
     });
@@ -18,7 +19,7 @@ export default function TypeBubble() {
     const handleKeyDown = (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            messageOnSend();
+            messageOnSend(e);
         }
     };
 
@@ -27,6 +28,7 @@ export default function TypeBubble() {
             id="typeBase"
             className="flex sticky bottom-6 mx-auto 
                         w-full h-fit
+                        transition duration-600 ease-in
                        bg-slate-700 border border-slate-700 
                        rounded-3xl shadow-xl overflow-hidden
                        transition-all duration-300 
@@ -37,10 +39,11 @@ export default function TypeBubble() {
             */}
             <form
                 id="typeArea"
+                onSubmit={messageOnSend}
                 className="flex flex-row grow items-end px-2 py-2 gap-2"
             >
                 <textarea
-                    className="flex-grow bg-transparent text-slate-100 placeholder-slate-400
+                    className="grow bg-transparent text-slate-100 placeholder-slate-400
                                px-4 py-3 focus:outline-none resize-none
                                min-h-[50px] max-h-[25vh] overflow-y-auto
                                scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent"
@@ -48,15 +51,17 @@ export default function TypeBubble() {
                     placeholder="Ask Anything ..."
                     value={data.message_content}
                     onChange={(e) => setData("message_content", e.target.value)}
+                    onKeyDown={handleKeyDown}
                     disabled={processing}
                 />
 
                 {/* Tombol Send (Opsional tapi sangat direkomendasikan untuk UX) */}
                 <button
                     type="submit"
-                    disabled="processing"
+                    disabled={processing || !data.message_content.trim()}
                     className="p-3 mr-1 mb-0.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 
-                               text-white transition-colors flex-shrink-0 shadow-md"
+                               text-white transition-colors shrink-0 shadow-md
+                               disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Send Message"
                 >
                     <svg

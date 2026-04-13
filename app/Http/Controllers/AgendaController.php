@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\RealtimeNotificationEvent;
 use App\Http\Requests\StoreAgendaRequest;
 use App\Http\Requests\UpdateAgendaRequest;
 use App\Models\Agenda;
@@ -45,10 +46,17 @@ class AgendaController extends Controller
             $agenda->tags()->sync($request->tags);
         }
 
-        return redirect()->back()->with([
-            'type'=>'positive',
-            'message'=> 'A new agenda has been Added!'
-        ]);
+
+
+        // BROADCAST FROM REVERB TO ECHO
+        broadcast(new RealtimeNotificationEvent('A new agenda has been Added!', 'positive'));
+
+        // return redirect()->back()->with([
+        //     'type'=>'positive',
+        //     'message'=> 'A new agenda has been Added!'
+        // ]);
+
+        return redirect()->back();
     }
 
     /**
@@ -82,6 +90,8 @@ class AgendaController extends Controller
             $agenda->tags()->sync($request->tags);
         }
 
+        broadcast(new RealtimeNotificationEvent('The Agenda has been updated successfully!', 'positive'));
+
         return redirect()->back();
     }
 
@@ -91,9 +101,11 @@ class AgendaController extends Controller
     public function destroy(Agenda $agenda)
     {
         $agenda->delete();
-        return back()->with([
-            'type' => 'negative',
-            'message' => 'Agenda is deleted'
-        ]);
+        broadcast(new RealtimeNotificationEvent('The Agenda has been deleted.', 'ngetive'));
+        return back();
+        // return back()->with([
+        //     'type' => 'negative',
+        //     'message' => 'Agenda is deleted'
+        // ]);
     }
 }
