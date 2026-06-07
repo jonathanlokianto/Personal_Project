@@ -1,7 +1,7 @@
 import { router, useForm } from "@inertiajs/react";
 import { useEffect } from "react";
 
-export default function TypeBubble() {
+export default function TypeBubble({ onMessageSend }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         message_content: "",
         role: "user",
@@ -9,10 +9,22 @@ export default function TypeBubble() {
 
     const messageOnSend = (e) => {
         e.preventDefault();
-        if (!data.message_content.trim()) return;
+        if (!data.message_content.trim() || processing) return;
+
+        // if (onMessageSend) {
+        //     onMessageSend(data.message_content);
+        //     reset("message_content");
+        //     return;
+        // }
+
         post(route("chatbot.store"), {
             preserveScroll: true,
-            onSuccess: () => reset("message_content"),
+            onSuccess: () => {
+                if (onMessageSend) {
+                    onMessageSend(data.message_content);
+                }
+                reset("message_content");
+            },
         });
     };
 
@@ -28,10 +40,9 @@ export default function TypeBubble() {
             id="typeBase"
             className="flex sticky bottom-6 mx-auto 
                         w-full h-fit
-                        transition duration-600 ease-in
                        bg-slate-700 border border-slate-700 
                        rounded-3xl shadow-xl overflow-hidden
-                       transition-all duration-300 
+                       transition-all duration-300 ease-in
                        focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/50"
         >
             {/* Ubah ke flex-row agar input dan tombol send bersebelahan.

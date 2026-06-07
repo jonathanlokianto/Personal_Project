@@ -8,16 +8,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Message extends Model
 {
-    protected $fillable = [
-        'role',
-        'message_content'
-    ];
 
     /**
      * @return array<string, string>
      */
 
     use HasFactory;
+
+    protected $fillable = [
+        'role',
+        'message_content'
+    ];
 
     protected function casts(): array {       
         return [

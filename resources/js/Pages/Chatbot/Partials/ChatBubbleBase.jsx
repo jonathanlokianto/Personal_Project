@@ -1,11 +1,8 @@
 export default function ChatBubbleBase({ chatData }) {
-    console.log(chatData.role);
-
-    const chatRole = chatData.role;
+    const chatRole = chatData.role || "assistant";
 
     return (
         <div
-            id="baseChatBubble"
             className={` 
                     flex wrap-break-words
                 ${
@@ -20,7 +17,7 @@ export default function ChatBubbleBase({ chatData }) {
                 }
                 `}
         >
-            <div className="flex flex-col min-w-[80px]">
+            <div className="flex flex-col min-w-20">
                 <div className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">
                     {chatData.message_content}
                 </div>

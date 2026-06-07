@@ -101,7 +101,7 @@ class AgendaController extends Controller
     public function destroy(Agenda $agenda)
     {
         $agenda->delete();
-        broadcast(new RealtimeNotificationEvent('The Agenda has been deleted.', 'ngetive'));
+        broadcast(new RealtimeNotificationEvent('The Agenda has been deleted.', 'negative'));
         return back();
         // return back()->with([
         //     'type' => 'negative',

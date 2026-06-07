@@ -10,19 +10,16 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class RealtimeChatbotEvent implements ShouldBroadcast
+class MessageHistoryTruncatedEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
      * Create a new event instance.
      */
-    public $message;
-    public $role;
-    public function __construct($message, $role)
+    public function __construct()
     {
-        $this->message = $message;
-        $this->role = $role;
+        //
     }
 
     /**
@@ -33,12 +30,12 @@ class RealtimeChatbotEvent implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('chatbot_channel'),
+            new Channel('truncateChatHistory-channel'),
         ];
     }
 
     public function broadcastAs(): string
     {
-        return 'RealtimeMessage';
+        return 'chatHistorytruncated';
     }
 }

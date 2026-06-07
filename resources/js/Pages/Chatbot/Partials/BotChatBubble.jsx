@@ -1,7 +1,6 @@
-export default function BotChatBubble() {
+export default function BotChatBubble({message}) {
     return (
         <div
-            id="baseChatBubble"
             className=" bg-gray-600 rounded-xl
                     flex wrap-break-word
                     px-6 py-2
@@ -10,7 +9,7 @@ export default function BotChatBubble() {
                     self-start shadow-sm rounded-tl-none
                 "
         >
-            <div>test</div>
+            <div>{message}</div>
         </div>
     );
 }

@@ -1,5 +1,5 @@
 import { Link, usePage, router } from "@inertiajs/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // const getLinkClass = (path) => {
 //     const isActive = url === path;
@@ -28,6 +28,20 @@ const NavLink = ({ href, children, active }) => {
 export default function Navbar() {
     const { url } = usePage();
     const [isOpen, setIsOpen] = useState(false);
+    const dropDownRef = useRef(null);
+    useEffect (()=>{
+        const handleOutsideClick = (e) => {
+            if (dropDownRef.current && !dropDownRef.current.contains(e.target)){
+
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleOutsideClick);
+        return ()=>{
+            document.removeEventListener("mousedown", handleClickOutside);
+        }
+    }, []);
 
     return (
         <>
@@ -105,7 +119,7 @@ export default function Navbar() {
                             </button>
 
                             {/* Profile Dropdown */}
-                            <div className="relative ml-3">
+                            <div className="relative ml-3" ref={dropDownRef}>
                                 <button
                                     onClick={() => setIsOpen(!isOpen)}
                                     className="relative flex rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
