@@ -1,31 +1,19 @@
-import { router, useForm } from "@inertiajs/react";
-import { useEffect } from "react";
+import { useState } from "react";
 
-export default function TypeBubble({ onMessageSend }) {
-    const { data, setData, post, processing, errors, reset } = useForm({
-        message_content: "",
-        role: "user",
-    });
+export default function TypeBubble({ onMessageSend, isStreaming,onStopStream }) {
+    const [messageContent, setMessageContent] = useState("");
 
     const messageOnSend = (e) => {
         e.preventDefault();
-        if (!data.message_content.trim() || processing) return;
+        if (!messageContent.trim() || isStreaming) return;
 
-        // if (onMessageSend) {
-        //     onMessageSend(data.message_content);
-        //     reset("message_content");
-        //     return;
-        // }
+        // Langsung lempar teks ke fungsi streaming di Index.jsx
+        if (onMessageSend) {
+            onMessageSend(messageContent);
+        }
 
-        post(route("chatbot.store"), {
-            preserveScroll: true,
-            onSuccess: () => {
-                if (onMessageSend) {
-                    onMessageSend(data.message_content);
-                }
-                reset("message_content");
-            },
-        });
+        // Bersihkan teks input secara instan tanpa menunggu reload halaman
+        setMessageContent("");
     };
 
     const handleKeyDown = (e) => {
@@ -39,15 +27,12 @@ export default function TypeBubble({ onMessageSend }) {
         <div
             id="typeBase"
             className="flex sticky bottom-6 mx-auto 
-                        w-full h-fit
+                       w-full h-fit
                        bg-slate-700 border border-slate-700 
                        rounded-3xl shadow-xl overflow-hidden
                        transition-all duration-300 ease-in
                        focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/50"
         >
-            {/* Ubah ke flex-row agar input dan tombol send bersebelahan.
-              items-end memastikan tombol send tetap di bawah saat textarea membesar.
-            */}
             <form
                 id="typeArea"
                 onSubmit={messageOnSend}
@@ -58,36 +43,56 @@ export default function TypeBubble({ onMessageSend }) {
                                px-4 py-3 focus:outline-none resize-none
                                min-h-[50px] max-h-[25vh] overflow-y-auto
                                scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent"
-                    rows={5}
+                    rows={1}
                     placeholder="Ask Anything ..."
-                    value={data.message_content}
-                    onChange={(e) => setData("message_content", e.target.value)}
+                    value={messageContent}
+                    onChange={(e) => setMessageContent(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    disabled={processing}
                 />
 
-                {/* Tombol Send (Opsional tapi sangat direkomendasikan untuk UX) */}
                 <button
-                    type="submit"
-                    disabled={processing || !data.message_content.trim()}
-                    className="p-3 mr-1 mb-0.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 
-                               text-white transition-colors shrink-0 shadow-md
-                               disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Send Message"
+                    type={isStreaming ? "button" : "submit"}
+                    disabled={!isStreaming && !messageContent.trim()}
+                    onClick={isStreaming ? onStopStream : undefined}
+                    className={`p-3 mr-1 mb-0.5 rounded-2xl text-white transition-all duration-300 shrink-0 shadow-md ${
+                        isStreaming
+                            ? "bg-red-500 hover:bg-red-600 cursor-pointer"
+                            : "bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    }`}
+                    title={isStreaming ? "Stop Generating" : "Send Message"}
                 >
-                    <svg
-                        className="w-5 h-5 transform rotate-90"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                        />
-                    </svg>
+                    {isStreaming ? (
+                        // Ikon Stop (Kotak)
+                        <svg
+                            className="w-5 h-5 animate-pulse"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <rect
+                                x="6"
+                                y="6"
+                                width="12"
+                                height="12"
+                                rx="2"
+                                ry="2"
+                            />
+                        </svg>
+                    ) : (
+                        // Ikon Send (Pesawat Kertas)
+                        <svg
+                            className="w-5 h-5 transform rotate-90"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                            />
+                        </svg>
+                    )}
                 </button>
             </form>
         </div>

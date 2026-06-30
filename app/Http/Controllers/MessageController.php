@@ -8,7 +8,7 @@ use App\Events\RealtimeNotificationEvent;
 use App\Http\Controllers\Controller;
 use App\Models\Message;
 use Illuminate\Http\Request;
-use OpenAI\Laravel\Facades\OpenAI;
+use App\Services\OpenAIService;
 
 class MessageController extends Controller
 {
@@ -85,72 +85,25 @@ class MessageController extends Controller
     }
 
 
-    public function stream(Request $request, String $modelName = "z-ai/glm-4.5-air:free"){
-        return response()->stream(function() use ($request, $modelName){
-            $messages = $request->input('content', []);
-            if(empty($messages)){
-                return;
-            }
+    public function stream(Request $request, OpenAIService $openAIService){
+        $messages = $request->input('content', []);
+        if(empty($messages)){
+            return;
+        }
 
+        $userPrompt = $messages[0]['content'];
+        Message::create([
+            'role' => 'user',
+            'message_content' => $userPrompt,
+        ]);
 
-            $openAIMessages = collect($messages)-> map(fn($message) => [
-                'role' => $message['type'] === 'prompt' ? 'user' : 'assistant',
-                'content' => $message['content']
-            ])->toArray();
-            $fullResponse = '';
+        $callback = $openAIService->getStreamCallback();
 
-            if(app()->environment('testing') || ! config('openai.api_key')){
-                $fullResponse = 'This is a test response.';
-                echo $fullResponse;
-                ob_flush();
-                flush();
-            } else {
-                try{
-                    $client = \OpenAI::factory()
-                        ->withApiKey(config('openai.api_key'))
-                        ->withBaseUri(config('openai.base_uri'))
-                        ->withHttpHeader('HTTP-Referer', config('app.url')) // Syarat wajib model gratis OpenRouter
-                        ->withHttpHeader('X-Title', 'Aplikasi Skripsi/Dashboard') // Nama aplikasimu
-                        ->make();
-
-                    $stream = $client->chat()->createStreamed([
-                        'model' => $modelName,
-                        'messages' => $openAIMessages,
-                    ]);
-
-                    foreach($stream as $response){
-                        $chunk = $response->choices[0]->delta->content;
-                        if ($chunk !== null) {
-                            $fullResponse .= $chunk;
-                            echo $chunk;
-                            ob_flush();
-                            flush();
-                        }
-                    }
-                }
-                catch (\Exception $e){ 
-                    $fullResponse = 'Error: ' . $e->getMessage();
-                    echo $fullResponse;
-                    ob_flush();
-                    flush();
-                }
-            }
-
-            if($fullResponse){
-                Message::create([            
-                    'role' => 'assistant',
-                    'message_content'=> $fullResponse,
-                ]);
-            }
-
-
-        }, 200, [
+        // Controller HANYA mengurus pengembalian Response dan Header HTTP
+        return response()->stream($callback, 200, [
             'Cache-Control' => 'no-cache',
             'Content-Type' => 'text/event-stream',
             'X-Accel-Buffering' => 'no',
-        ]
-
-        
-        );
+        ]);
     }
 }

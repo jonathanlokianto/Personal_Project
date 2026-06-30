@@ -3,6 +3,8 @@ import ChatBubbleBase from "./Partials/ChatBubbleBase";
 import TypeBubble from "./Partials/TypeBubble";
 import TrashIcon from "../../../assets/images/TrashIcon.png";
 import GearIcon from "../../../assets/images/GearIcon.png";
+import stopButton from "../../../assets/images/stopButton.png";
+
 import SettingModal from "./Partials/SettingModal";
 
 import { useEffect, useRef, useState } from "react";
@@ -11,34 +13,85 @@ import { useStream } from "@laravel/stream-react";
 
 export default function Index({ chatHistory }) {
     const [isAtBottomChat, setIsAtBottomChat] = useState(true);
-
     const [isModalOpen, setIsModalOpen] = useState(null);
+    const [dots, setDots] = useState("");
+    const [localChats, setLocalChats] = useState(chatHistory);
 
     const latestMessageRef = useRef(null);
     const innerModalAreaRef = useRef(null);
-
     const chatAreaRef = useRef(null);
+
     const scrollToBottom = () => {
-        chatAreaRef.current.scrollTo({
-            top: chatAreaRef.current.scrollHeight,
+        chatAreaRef.current?.scrollTo({
+            top: chatAreaRef.current?.scrollHeight,
             behavior: "smooth",
         });
     };
 
-    //START STREAMING
-    const { data, isFetching, isStreaming, send, jsonData } =
-        useStream("/chatbot/stream");
-    const sendMessage = () => {
-        send({
-            content: "",
-        });
+    const closeModalSettings = () => {
+        setIsModalOpen(false);
     };
 
-    // watch([isStreaming, data], () => {
-    //     if (isStreaming.value) {
-    //         scrollToBottom();
-    //     }
-    // });
+    useEffect(() => {
+        setLocalChats(chatHistory);
+    }, [chatHistory]);
+
+    // START STREAMING
+    const { data, isFetching, isStreaming, send, cancel } =
+        useStream("/chatbot/stream");
+
+    useEffect(() => {
+        if (isStreaming) {
+            scrollToBottom();
+        }
+    }, [isStreaming, data]);
+
+    const handleStreamingResponses = (userPrompt) => {
+        // OPTIMISTIC UPDATE: Tambahkan ke memori lokal
+        const tempUserMessage = {
+            id: `temp-${Date.now()}`,
+            role: "user",
+            message_content: userPrompt,
+            created_at: new Date().toISOString(),
+        };
+        setLocalChats((prevChats) => [...prevChats, tempUserMessage]);
+
+        // 1. Jalankan koneksi streaming ke backend
+        send({
+            content: [
+                {
+                    type: "prompt",
+                    content: userPrompt,
+                },
+            ],
+        });
+
+        // 2. Cukup scroll ke bawah. TIDAK ADA LAGI router.reload() di sini.
+        setTimeout(() => {
+            scrollToBottom();
+        }, 100);
+    };
+
+    // 3. Tarik balasan utuh AI dari database setelah proses streaming selesai
+    useEffect(() => {
+        if (!isStreaming && data) {
+            router.reload({ only: ["chatHistory"] });
+            scrollToBottom();
+        }
+    }, [isStreaming]);
+
+    useEffect(() => {
+        let interval;
+        if ((isStreaming || isFetching) && !data) {
+            interval = setInterval(() => {
+                setDots((prev) => (prev.length >= 3 ? "" : prev + "."));
+            }, 400);
+        } else {
+            setDots("");
+        }
+        return () => clearInterval(interval);
+    }, [isStreaming, isFetching, data]);
+    // END STREAMING
 
     useEffect(() => {
         const handleOuterSettingModalClick = (e) => {
@@ -47,48 +100,15 @@ export default function Index({ chatHistory }) {
                 !innerModalAreaRef.current.contains(e.target)
             ) {
                 setIsModalOpen(false);
-                console.log("CLICKED CLOSE");
             }
         };
         document.addEventListener("mousedown", handleOuterSettingModalClick);
-        return () => {
+        return () =>
             document.removeEventListener(
                 "mousedown",
                 handleOuterSettingModalClick,
             );
-        };
     }, []);
-
-    useEffect(() => {
-        if (isStreaming) {
-            scrollToBottom();
-        }
-    }, [isStreaming]);
-
-    const handleStreamingResponses = (userPrompt) => {
-        setTimeout(() => {
-            send({
-                content: [
-                    {
-                        type: "prompt",
-                        content: userPrompt,
-                    },
-                ],
-            });
-        });
-    };
-
-    //END STREAMING
-
-    const handleOpenSettingsModal = () => {
-        console.log("open");
-        setIsModalOpen(true);
-    };
-
-    const handleExitSettingsModal = () => {
-        console.log("close");
-        setIsModalOpen(false);
-    };
 
     useEffect(() => {
         if (isModalOpen) {
@@ -106,29 +126,6 @@ export default function Index({ chatHistory }) {
             router.delete(route("chatbot.clear"));
         }
     };
-
-    useEffect(() => {
-        const magnetScroll = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    chatAreaRef.current?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center",
-                    });
-                }
-            },
-            { threshold: 0.3 },
-        );
-        if (chatAreaRef.current) {
-            magnetScroll.observe(chatAreaRef.current);
-        }
-
-        return () => {
-            if (chatAreaRef.current) {
-                magnetScroll.unobserve(chatAreaRef.current);
-            }
-        };
-    }, []);
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -155,19 +152,19 @@ export default function Index({ chatHistory }) {
             }, 50);
             return () => clearTimeout(timeOut);
         }
-    }, [chatHistory]);
+    }, [localChats]); // Pastikan memantau localChats, bukan chatHistory
 
     useEffect(() => {
         if (window.Echo) {
             const chatChannel = window.Echo.channel("chatbot_channel");
-            chatChannel.listen(".RealtimeMessage", (e) => {
+            chatChannel.listen(".RealtimeMessage", () => {
                 router.reload({ only: ["chatHistory"] });
             });
 
             const chatTruncateChannel = window.Echo.channel(
                 "truncateChatHistory-channel",
             );
-            chatTruncateChannel.listen(".chatHistorytruncated", (e) => {
+            chatTruncateChannel.listen(".chatHistorytruncated", () => {
                 router.reload({ only: ["chatHistory"] });
             });
             return () => {
@@ -180,45 +177,34 @@ export default function Index({ chatHistory }) {
     return (
         <div
             id="chatBoundary"
-            className="bg-gray-800 flex
-                    flex-col grow w-full h-screen
-                    py-4 px-4 md:px-30 mx-4
-                    rounded-2xl shadow-xl
-                    relative overflow-hidden
-                    outline-3 outline-white
-                    "
+            className="bg-gray-800 flex flex-col grow w-full h-screen py-4 px-4 md:px-30 mx-4 rounded-2xl shadow-xl relative overflow-hidden outline-3 outline-white"
         >
             <div
                 ref={chatAreaRef}
                 id="chatArea"
-                className="
-                    flex flex-col grow overflow-y-auto gap-4 p-4 md:p-6
-                    scroll-smooth scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent
-                "
+                className="flex flex-col grow overflow-y-auto gap-4 p-4 md:p-6 scroll-smooth scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent"
             >
-                {chatHistory?.length > 0 ? (
-                    chatHistory.map((chat) => (
+                {/* PERBAIKAN UTAMA: Render 'localChats', BUKAN 'chatHistory' */}
+                {localChats?.length > 0 ? (
+                    localChats.map((chat) => (
                         <ChatBubbleBase key={chat.id} chatData={chat} />
                     ))
                 ) : (
-                    <div
-                        className="text-gray-400 text-lg
-                                    flex-col items-center justify-center 
-                                    my-6 mx-auto 
-                                    w-full text-center"
-                    >
+                    <div className="text-gray-400 text-lg flex-col items-center justify-center my-6 mx-auto w-full text-center">
                         No Messages Yet
                     </div>
                 )}
+
                 {(isStreaming || isFetching) && (
                     <div className="flex w-full mt-2 space-x-3 max-w-2xl">
                         <ChatBubbleBase
                             chatData={{
                                 role: "assistant",
-                                message_content: data || "Writing ...", // Menampilkan data yang masuk, atau kosong jika masih fetching
+                                message_content: data ? data : `Writing${dots}`,
                             }}
                             isStreaming={true}
                         />
+                        n
                     </div>
                 )}
                 <div ref={latestMessageRef} />
@@ -228,7 +214,7 @@ export default function Index({ chatHistory }) {
                 <button
                     onClick={scrollToBottom}
                     className="absolute z-50 bottom-56 left-1/2 -translate-x-1/2 bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-full shadow-lg transition-all animate-bounce"
-                    title="Got to Bottom"
+                    title="Go to Bottom"
                 >
                     <svg
                         className="w-5 h-5"
@@ -249,11 +235,8 @@ export default function Index({ chatHistory }) {
             <div className="flex flex-col bg-gray-800 border-t border-gray-700/50">
                 <div className="flex justify-between px-6 pt-3 -mb-1">
                     <button
-                        onClick={handleOpenSettingsModal}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium 
-                        text-gray-400 bg-gray-700/30 hover:bg-red-500/10 hover:text-red-400 
-                        rounded-lg transition-all duration-300 border border-transparent 
-                        hover:border-red-500/20 group"
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-400 bg-gray-700/30 hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-all duration-300 border border-transparent hover:border-red-500/20 group"
                     >
                         <img
                             src={GearIcon}
@@ -262,10 +245,7 @@ export default function Index({ chatHistory }) {
                     </button>
                     <button
                         onClick={handleDeleteAllMessages}
-                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium 
-                        text-gray-400 bg-gray-700/30 hover:bg-red-500/10 hover:text-red-400 
-                        rounded-lg transition-all duration-300 border border-transparent 
-                        hover:border-red-500/20 group"
+                        className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-400 bg-gray-700/30 hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-all duration-300 border border-transparent hover:border-red-500/20 group"
                     >
                         <img
                             src={TrashIcon}
@@ -274,13 +254,27 @@ export default function Index({ chatHistory }) {
                     </button>
                 </div>
 
+                {/* START TYPE BUBBLE */}
+
                 <div className="flex-none p-4">
-                    <TypeBubble onMessageSend={handleStreamingResponses} />
+                    <TypeBubble
+                        onMessageSend={handleStreamingResponses}
+                        isStreaming={isStreaming || isFetching}
+                        onStopStream={cancel}
+                    />
                 </div>
+                {/* END TYPE BUBBLE */}
+
+                {/* START SETTINGS WINDOW */}
 
                 {isModalOpen && (
-                <SettingModal innerModalAreaRef = {innerModalAreaRef}/>
+                    <SettingModal 
+                        innerModalAreaRef={innerModalAreaRef} 
+                        onClose={closeModalSettings}
+                    />
                 )}
+
+                {/* END SETTINGS WINDOW */}
             </div>
         </div>
     );

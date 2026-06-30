@@ -12,8 +12,12 @@ return [
     | and organization on your OpenAI dashboard, at https://openai.com.
     */
 
-    'api_key' => env('OPENAI_API_KEY'),
-    'base_uri' => env('OPENAI_BASE_URI'),
+    'preset_name' => env('PRESET_NAME'),
+    'api_key' => env('MODEL_API_KEY'),
+    'model_provider_uri' => env('MODEL_PROVIDER_URL'),
+    'model_name' => env('MODEL_NAME'),
+
+
     'organization' => null,
 
     /*
