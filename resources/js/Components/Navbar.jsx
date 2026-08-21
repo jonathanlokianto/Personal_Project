@@ -39,7 +39,7 @@ export default function Navbar() {
 
         document.addEventListener("mousedown", handleOutsideClick);
         return ()=>{
-            document.removeEventListener("mousedown", handleClickOutside);
+            document.removeEventListener("mousedown", handleOutsideClick);
         }
     }, []);
 
@@ -75,16 +75,10 @@ export default function Navbar() {
                                         Chatbot
                                     </NavLink>
                                     <NavLink
-                                        href="/Calendar"
-                                        active={url === "/calendar"}
+                                        href="/mp3-downloader"
+                                        active={url === "/mp3-downloader"}
                                     >
-                                        Calendar
-                                    </NavLink>
-                                    <NavLink
-                                        href="/Idle"
-                                        active={url === "/idle"}
-                                    >
-                                        Idle
+                                        MP3 Downloader
                                     </NavLink>
 
                                     <NavLink href="/test-flash">TEST</NavLink>

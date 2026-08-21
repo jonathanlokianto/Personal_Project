@@ -3,12 +3,12 @@ import AgendaNavbar from "./Partials/AgendaNavbar.jsx";
 import AgendaList from "./Partials/AgendaList.jsx";
 import EditLogo from "../../../assets/images/EditLogo.png";
 import PlusIcon from "../../../assets/images/PlusIcon.png";
-import { Link } from "@inertiajs/react";
+import { Link, router } from "@inertiajs/react";
 import { useState } from "react";
 import AgendaCreate from "./Partials/AgendaCreate.jsx";
 import TagList from "./Partials/TagList.jsx";
 
-export default function Index({ agendas, tags }) {
+export default function Index({ agendas, tags, filters }) {
     const [activeAgendaPage, setActiveAgendaPage] = useState("listAgendaState");
     const [editAgendaData, setEditAgendaData] = useState(null);
 
@@ -17,12 +17,26 @@ export default function Index({ agendas, tags }) {
         setActiveAgendaPage("editAgendaState");
     };
 
+    const handleSearchButton = ({filters}) => {
+        router.get(
+            route("agenda.index"), {
+                include: filters.include, 
+                exclude: filters.exclude,
+                search: filters.search
+            }, {
+                preserveState:true,
+                preserveScroll: true,
+                replace:true
+            }
+        );
+    };
+
     return (
         <>
             <div className="flex flex-col grow rounded gap-2">
                 {activeAgendaPage === "listAgendaState" && (
                     <div>
-                        <AgendaNavbar />
+                        <AgendaNavbar onSearch={handleSearchButton} tagList = {tags}/>
                         <div className="relative">
                             <AgendaList
                                 agendas={agendas}
@@ -85,7 +99,11 @@ export default function Index({ agendas, tags }) {
                 )}
 
                 {activeAgendaPage === "listTagState" && (
-                    <TagList availableTags={tags} onCancel={()=>setActiveAgendaPage("listAgendaState")} />
+                    <TagList
+                        searchFilters = {filters}
+                        availableTags={tags}
+                        onCancel={() => setActiveAgendaPage("listAgendaState")}
+                    />
                 )}
             </div>
         </>

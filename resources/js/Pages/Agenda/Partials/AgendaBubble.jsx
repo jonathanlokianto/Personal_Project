@@ -25,15 +25,6 @@ import unlockLogo from "../../../../assets/images/unlock.png";
 // };
 
 export default function AgendaBubble({ agenda, onEditClick }) {
-    // const handleProgressClick = (step) => {
-    //     router.put(
-    //         `/agenda/${agenda.id}`,
-    //         { progress: step },
-    //         {
-    //             preserveScroll: true,
-    //         },
-    //     );
-
     const handleEdit = () => {
         onEditClick(agenda);
     };
@@ -60,103 +51,120 @@ export default function AgendaBubble({ agenda, onEditClick }) {
     };
 
     return (
-        <>
-            <div className="w-full p-2">
-                <div className="bg-[#455a73] relative flex flex-col p-5 text-white rounded-xl border border-[#3b4d63] transition-all hover:shadow-lg">
-                    <div
-                        className={`${agenda.isSuspended && "opacity-40 pointer-events-none"}`}
+        <div className="w-full">
+            {/* Card Utama (Padding dan border-radius diperkecil) */}
+            <div className="bg-[#455a73] relative flex flex-col p-4 md:p-5 text-white rounded-xl shadow-sm border border-[#3b4d63] transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 group">
+                
+                {/* Tombol Suspended (Lock/Unlock) - Absolute Top Right (Ukuran diperkecil) */}
+                <div className="absolute top-4 right-4 z-10">
+                    <button
+                        onClick={() => {
+                            router.put(
+                                route("agenda.update", agenda.id),
+                                { isSuspended: !agenda.isSuspended },
+                                {
+                                    preserveScroll: true,
+                                },
+                            );
+                        }}
+                        className={`flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-300 ${
+                            agenda.isSuspended 
+                                ? "bg-red-500/20 border-red-500/50 hover:bg-red-500/40" 
+                                : "bg-white/10 border-white/10 hover:bg-white/20"
+                        }`}
+                        title={agenda.isSuspended ? "Unlock Agenda" : "Suspend Agenda"}
                     >
-                        <div className="mb-2">
-                            <h1 className="text-xl font-bold tracking-wide text-slate-50">
-                                {agenda.content}
-                            </h1>
-                            <h4 className="text-slate-50">{agenda.note}</h4>
-                        </div>
+                        <img 
+                            src={agenda.isSuspended ? lockLogo : unlockLogo} 
+                            alt="Status Icon" 
+                            className="w-4 h-4 opacity-90" 
+                        />
+                    </button>
+                </div>
 
+                {/* Wrapper Konten (Meredup jika Suspended) */}
+                <div
+                    className={`flex flex-col grow transition-all duration-300 ${
+                        agenda.isSuspended ? "opacity-50 grayscale-[30%] pointer-events-none" : ""
+                    }`}
+                >
+                    {/* Header Konten (Margin bawah & Font size diperkecil) */}
+                    <div className="mb-3 pr-10">
+                        <h1 className="text-lg font-bold tracking-wide text-white leading-snug">
+                            {agenda.content}
+                        </h1>
+                        {agenda.note && (
+                            <p className="text-xs text-slate-300 mt-1 leading-relaxed line-clamp-2">
+                                {agenda.note}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Area Progress / Completed (Padding box & margin diperkecil) */}
+                    <div className="mb-4">
                         {agenda.progress >= 100 ? (
-                            <h6 className="text-green-600 font-bold">
-                                ✅ Completed at{" "}
-                                {new Date(
-                                    agenda.completed_at,
-                                ).toLocaleDateString()}
-                            </h6>
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500/20 border border-green-500/30 rounded-md">
+                                <span className="text-green-400 font-bold text-xs">
+                                    ✅ Completed at{" "}
+                                    {new Date(agenda.completed_at).toLocaleDateString("id-ID", {
+                                        day: 'numeric', month: 'short', year: 'numeric'
+                                    })}
+                                </span>
+                            </div>
                         ) : (
-                            <div className="flex flex-col gap-0.5">
-                                <h4 className="leading-none mb-2 font-medium">
-                                    Progress: {agenda.progress}%
-                                </h4>
+                            <div className="flex flex-col gap-2 bg-black/20 p-3 rounded-lg border border-white/5">
+                                <div className="flex justify-between items-end">
+                                    <h4 className="text-xs font-semibold text-slate-300">
+                                        Current Progress
+                                    </h4>
+                                    <span className="text-xs font-bold text-blue-300">
+                                        {agenda.progress}%
+                                    </span>
+                                </div>
                                 <AgendaProgressBar
                                     currentProgress={agenda.progress}
                                     onProgressChange={handleProgressClick}
                                 />
                             </div>
                         )}
+                    </div>
 
-                        <div className="flex justify-between items-center mt-2">
-                            <div className="flex flex-wrap gap-2">
-                                {agenda.tags?.map((tag) => (
-                                    <span key={tag.id}>#{tag.tag_name}</span>
-                                ))}
-                            </div>
-
-                            <div className="flex gap-3">
-                                <button
-                                    className="bg-blue-500 hover:bg-blue-600 text-white 
-                                                text-sm px-4 py-1.5 rounded-md transition-colors 
-                                                shadow-sm cursor-pointer"
-                                    onClick={handleEdit}
+                    {/* Footer: Tags dan Tombol Aksi (Jarak antar elemen dirapatkan) */}
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mt-auto pt-3 border-t border-white/10">
+                        
+                        {/* Wrapper Tags (Ukuran tag diperkecil) */}
+                        <div className="flex flex-wrap gap-1.5">
+                            {agenda.tags?.map((tag) => (
+                                <span 
+                                    key={tag.id}
+                                    className="px-2 py-0.5 text-[11px] font-medium text-slate-200 bg-white/10 border border-white/10 rounded backdrop-blur-sm"
                                 >
-                                    Edit
-                                </button>
+                                    #{tag.tag_name}
+                                </span>
+                            ))}
+                            {(!agenda.tags || agenda.tags.length === 0) && (
+                                <span className="text-[11px] text-slate-400 italic">No tags</span>
+                            )}
+                        </div>
 
-                                <button
-                                    className="bg-red-500 hover:bg-red-600 text-white 
-                                                text-sm px-4 py-1.5 transition-color 
-                                                rounded-md shadow-sm cursor-pointer"
-                                    onClick={handleDelete}
-                                >
-                                    Delete
-                                </button>
-                            </div>
+                        {/* Wrapper Tombol Aksi (Ukuran tombol diperkecil) */}
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <button
+                                onClick={handleEdit}
+                                className="flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-500 hover:bg-blue-600 rounded-md shadow-sm transition-all duration-200"
+                            >
+                                Edit
+                            </button>
+                            <button
+                                onClick={handleDelete}
+                                className="flex-1 sm:flex-none px-3.5 py-1.5 text-xs font-semibold text-white bg-red-500 hover:bg-red-600 rounded-md shadow-sm transition-all duration-200"
+                            >
+                                Delete
+                            </button>
                         </div>
                     </div>
-
-                    <div className="absolute w-8 h-8 top-6 right-6">
-                        {agenda.isSuspended ? (
-                            <button
-                                onClick={() => {
-                                    router.put(
-                                        route("agenda.update", agenda.id),
-                                        { isSuspended: !agenda.isSuspended },
-                                        {
-                                            preserveScroll: true,
-                                        },
-                                    );
-                                }}
-                            >
-                                <img src={lockLogo} />
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => {
-                                    router.put(
-                                        route("agenda.update", agenda.id),
-                                        { isSuspended: !agenda.isSuspended },
-                                        {
-                                            preserveScroll: true,
-                                        },
-                                    );
-                                }}
-                            >
-                                <img src={unlockLogo} />
-                            </button>
-                        )}
-                    </div>
-
-                    {/* <h6>Created At {agenda.created_at}</h6>
-                        <h6>Updated At {agenda.updated_at}</h6> */}
                 </div>
             </div>
-        </>
+        </div>
     );
 }

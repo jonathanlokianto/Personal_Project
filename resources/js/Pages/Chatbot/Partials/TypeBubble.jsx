@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function TypeBubble({ onMessageSend, isStreaming,onStopStream }) {
+export default function TypeBubble({ onMessageSend, isStreaming, onStopStream }) {
     const [messageContent, setMessageContent] = useState("");
 
     const messageOnSend = (e) => {
@@ -41,7 +41,7 @@ export default function TypeBubble({ onMessageSend, isStreaming,onStopStream }) 
                 <textarea
                     className="grow bg-transparent text-slate-100 placeholder-slate-400
                                px-4 py-3 focus:outline-none resize-none
-                               min-h-[50px] max-h-[25vh] overflow-y-auto
+                               min-h-12.5 max-h-[25vh] overflow-y-auto
                                scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-transparent"
                     rows={1}
                     placeholder="Ask Anything ..."

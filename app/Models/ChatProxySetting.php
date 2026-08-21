@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class ChatProxySetting extends Model
 {
@@ -33,4 +34,20 @@ class ChatProxySetting extends Model
                 'preset_isDefault'    => 'boolean'
             ];
         }
+
+
+        public function setActive(){
+            DB::transaction(function () {
+            // ChatProxySetting::query()->update(['preset_isActive' => false]);
+            // $this->preset_isActive = true;
+            // $this->save();
+
+
+            self::where('id', '!=', $this->id)->update(['preset_isActive' => false]);
+            if (! $this->preset_isActive) {
+                $this->preset_isActive = true;
+                $this->save();
+            }
+        });
+    }
 }

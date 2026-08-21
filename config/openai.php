@@ -13,9 +13,10 @@ return [
     */
 
     'preset_name' => env('PRESET_NAME'),
+    'model_name' => env('MODEL_NAME'),
     'api_key' => env('MODEL_API_KEY'),
     'model_provider_uri' => env('MODEL_PROVIDER_URL'),
-    'model_name' => env('MODEL_NAME'),
+    'model_custom_prompt' => env('MODEL_CUSTOM_PROMPT'),
 
 
     'organization' => null,

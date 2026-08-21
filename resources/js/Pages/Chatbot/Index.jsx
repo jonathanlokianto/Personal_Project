@@ -8,14 +8,19 @@ import stopButton from "../../../assets/images/stopButton.png";
 import SettingModal from "./Partials/SettingModal";
 
 import { useEffect, useRef, useState } from "react";
-import { router } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
 import { useStream } from "@laravel/stream-react";
+import ChatFlashNotification from "./Partials/ChatFlashNotification";
 
 export default function Index({ chatHistory }) {
     const [isAtBottomChat, setIsAtBottomChat] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(null);
     const [dots, setDots] = useState("");
     const [localChats, setLocalChats] = useState(chatHistory);
+    const [parsedStreamText, setParsedStreamText] = useState("");
+    const [notifications, setNotifications] = useState([]);
+
+    const { activePreset } = usePage().props;
 
     const latestMessageRef = useRef(null);
     const innerModalAreaRef = useRef(null);
@@ -36,6 +41,25 @@ export default function Index({ chatHistory }) {
         setLocalChats(chatHistory);
     }, [chatHistory]);
 
+    // START NOTIFICATION
+
+    const createNotification = (msg) => {
+        const newNotifId = Date.now();
+        setNotifications((prev) => [...prev, { id: newNotifId, message: msg }]);
+        setTimeout(() => {
+            setNotifications((prev) =>
+                prev.filter((notif) => notif.id !== newNotifId),
+            );
+        }, 10000);
+    };
+
+    const deleteNotification = (notifId) => {
+        setNotifications((prev) =>
+            prev.filter((notif) => notif.id !== notifId),
+        );
+    };
+    // END NOTIFICATION
+
     // START STREAMING
     const { data, isFetching, isStreaming, send, cancel } =
         useStream("/chatbot/stream");
@@ -46,15 +70,32 @@ export default function Index({ chatHistory }) {
         }
     }, [isStreaming, data]);
 
-    const handleStreamingResponses = (userPrompt) => {
-        // OPTIMISTIC UPDATE: Tambahkan ke memori lokal
+    const handleStreamingResponses = (
+        userPrompt,
+        restarted = false,
+        restartedChatId = null,
+    ) => {
         const tempUserMessage = {
             id: `temp-${Date.now()}`,
             role: "user",
             message_content: userPrompt,
             created_at: new Date().toISOString(),
         };
-        setLocalChats((prevChats) => [...prevChats, tempUserMessage]);
+
+        // setLocalChats((prevChats) => [...prevChats, tempUserMessage]);
+
+        setLocalChats((prevChats) => {
+            let updatedChats = [...prevChats];
+            if (restarted && restartedChatId) {
+                const targetIndex = updatedChats.findIndex(
+                    (chat) => chat.id === restartedChatId,
+                );
+                if (targetIndex !== -1) {
+                    updatedChats = updatedChats.slice(0, targetIndex);
+                }
+            }
+            return [...updatedChats, tempUserMessage];
+        });
 
         // 1. Jalankan koneksi streaming ke backend
         send({
@@ -62,11 +103,12 @@ export default function Index({ chatHistory }) {
                 {
                     type: "prompt",
                     content: userPrompt,
+                    isResend: restarted,
                 },
             ],
         });
 
-        // 2. Cukup scroll ke bawah. TIDAK ADA LAGI router.reload() di sini.
+        // 2. Cukup scroll ke bawah.
         setTimeout(() => {
             scrollToBottom();
         }, 100);
@@ -75,7 +117,11 @@ export default function Index({ chatHistory }) {
     // 3. Tarik balasan utuh AI dari database setelah proses streaming selesai
     useEffect(() => {
         if (!isStreaming && data) {
-            router.reload({ only: ["chatHistory"] });
+            router.reload({
+                only: ["chatHistory"],
+                preserveScrolls: true,
+                preserveState: true,
+            });
             scrollToBottom();
         }
     }, [isStreaming]);
@@ -91,6 +137,35 @@ export default function Index({ chatHistory }) {
         }
         return () => clearInterval(interval);
     }, [isStreaming, isFetching, data]);
+
+    useEffect(() => {
+        if (!data) {
+            setParsedStreamText("");
+            return;
+        }
+        const lines = data.split("\n");
+        let tempText = "";
+
+        for (const line of lines) {
+            if (line.startsWith("data: ")) {
+                try {
+                    const jsonStr = line.replace("data: ", "").trim();
+                    if (!jsonStr) continue;
+
+                    const parsed = JSON.parse(jsonStr);
+                    if (parsed.status === "error") {
+                        if (cancel) cancel();
+                        // alert("Gagal memproses AI: " + parsed.message);
+                        createNotification(parsed.message);
+                        return;
+                    } else if (parsed.status === "success") {
+                        tempText += parsed.chunk;
+                    }
+                } catch {}
+            }
+        }
+        setParsedStreamText(tempText);
+    }, [data]);
     // END STREAMING
 
     useEffect(() => {
@@ -123,7 +198,14 @@ export default function Index({ chatHistory }) {
         if (
             window.confirm("Do you really want to clear this chat's history?")
         ) {
-            router.delete(route("chatbot.clear"));
+            router.delete(route("chatbot.clear"), {
+                onSuccess: () => {
+                    createNotification("The chat history has been cleared");
+                },
+                onError: () => {
+                    createNotification("Failed to clear chat history");
+                },
+            });
         }
     };
 
@@ -180,15 +262,45 @@ export default function Index({ chatHistory }) {
             className="bg-gray-800 flex flex-col grow w-full h-screen py-4 px-4 md:px-30 mx-4 rounded-2xl shadow-xl relative overflow-hidden outline-3 outline-white"
         >
             <div
+                className="absolute top-6 left-1/2 
+                        -translate-x-1/2 z-50 
+                        w-full max-w-md px-4 
+                        flex flex-col gap-2 justify-center pointer-events-none"
+            >
+                {notifications.map((notif) => (
+                    <ChatFlashNotification
+                        key={notif.id}
+                        message={notif.message}
+                        onClose={() => deleteNotification(notif.id)}
+                    />
+                ))}
+            </div>
+
+            <div
                 ref={chatAreaRef}
                 id="chatArea"
                 className="flex flex-col grow overflow-y-auto gap-4 p-4 md:p-6 scroll-smooth scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent"
             >
                 {/* PERBAIKAN UTAMA: Render 'localChats', BUKAN 'chatHistory' */}
                 {localChats?.length > 0 ? (
-                    localChats.map((chat) => (
-                        <ChatBubbleBase key={chat.id} chatData={chat} />
-                    ))
+                    localChats.map((chat, index) => {
+                        const isLatestMessage = index === localChats.length - 1;
+                        return (
+                            <ChatBubbleBase
+                                key={chat.id}
+                                chatData={chat}
+                                isLatest={isLatestMessage}
+                                isLoading={isFetching}
+                                onMessageSendRepeat={() =>
+                                    handleStreamingResponses(
+                                        chat.message_content,
+                                        true,
+                                        chat.id,
+                                    )
+                                }
+                            />
+                        );
+                    })
                 ) : (
                     <div className="text-gray-400 text-lg flex-col items-center justify-center my-6 mx-auto w-full text-center">
                         No Messages Yet
@@ -200,11 +312,13 @@ export default function Index({ chatHistory }) {
                         <ChatBubbleBase
                             chatData={{
                                 role: "assistant",
-                                message_content: data ? data : `Writing${dots}`,
+                                message_content: parsedStreamText
+                                    ? parsedStreamText
+                                    : `Writing${dots}`,
                             }}
+                            modelName={activePreset?.model_name || "Assistant"}
                             isStreaming={true}
                         />
-                        n
                     </div>
                 )}
                 <div ref={latestMessageRef} />
@@ -268,8 +382,8 @@ export default function Index({ chatHistory }) {
                 {/* START SETTINGS WINDOW */}
 
                 {isModalOpen && (
-                    <SettingModal 
-                        innerModalAreaRef={innerModalAreaRef} 
+                    <SettingModal
+                        innerModalAreaRef={innerModalAreaRef}
                         onClose={closeModalSettings}
                     />
                 )}
@@ -279,4 +393,5 @@ export default function Index({ chatHistory }) {
         </div>
     );
 }
+
 Index.layout = (page) => <MainLayout children={page} />;

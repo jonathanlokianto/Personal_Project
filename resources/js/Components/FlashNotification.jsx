@@ -54,10 +54,12 @@ export default function () {
                         p-2
                         ${notif.type === "negative" ? "bg-red-500 hover:bg-red-600" : "bg-green-500 hover:bg-green-600"}
                     `}
-                    onClick={() => removeFlashNotification(notif.id)}
                 >
                     <span className="font-medium">{notif.message}</span>
-                    <button className="ml-4 text-white/70 hover:text-white font-bold text-sm">
+                    <button 
+                        className="ml-4 text-white/70 hover:text-white font-bold text-sm"
+                        onClick={() => removeFlashNotification(notif.id)}
+                    >
                         ✕
                     </button>
                 </div>

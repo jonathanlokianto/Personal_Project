@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Events\RealtimeNotificationEvent;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreChatProxySettingRequest;
 use App\Models\ChatProxySetting;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ChatProxySettingController extends Controller
 {
@@ -32,7 +32,11 @@ class ChatProxySettingController extends Controller
     public function store(StoreChatProxySettingRequest $request)
     {
         $validated = $request->validated();
-        $preset = ChatProxySetting::create($validated);
+        $preset = ChatProxySetting::updateOrCreate(
+            ['id' => $request->id],
+            $validated
+        );
+        $preset -> setActive();
 
         broadcast(new RealtimeNotificationEvent('A new proxy has been Added!', 'positive'));
 
@@ -42,7 +46,6 @@ class ChatProxySettingController extends Controller
         // ]);
 
         return redirect()->back();
-
     }
 
     /**
@@ -77,12 +80,8 @@ class ChatProxySettingController extends Controller
         //
     }
 
-    public function setActive(ChatProxySetting $item){
-        DB::transaction(function () use ($item) {
-            ChatProxySetting::query()->update(['preset_isActive' => false]);
-            $item->preset_isActive = true;
-            $item->save();
-        });
+    public function setPresetActive(ChatProxySetting $item){
+        $item -> setActive();
 
         return back();
     }

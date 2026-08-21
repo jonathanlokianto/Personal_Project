@@ -15,14 +15,45 @@ class AgendaController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    private const MAX_PAGINATE = 3;
+
+    public function index(Request $request)
     {
-        $agendas = Agenda::with('tags')->latest()->paginate(3);
+        
+        $include = $request->include;
+        $exclude = $request->exclude;
+        $search = $request->search;
+
+        $query = Agenda::with('tags')->latest();
+
+        if(!empty($search)){
+            $query  ->where(function($q) use ($search){
+                    $q  ->where('content', 'like', "%{$search}%")
+                        ->orWhere('note', 'like', "%{$search}%");
+            });
+        }
+
+        if (!empty($include)) {
+            $includeTags = array_map('trim', explode(',', $include));
+            $query->whereHas('tags', function($q) use ($includeTags) {
+                $q->whereIn('tag_name', $includeTags);
+            });
+        }
+
+        if (!empty($exclude)) {
+            $excludeTags = array_map('trim', explode(',', $exclude));
+            $query->whereDoesntHave('tags', function($q) use ($excludeTags) {
+                $q->whereIn('tag_name', $excludeTags);
+            });
+        }
+
+        $agendas = $query->paginate(self::MAX_PAGINATE)->withQueryString();
         $tags = Tag::all();
 
         return inertia('Agenda/Index', [
             'agendas' => $agendas,
-            'tags' => $tags
+            'tags' => $tags,
+            'filters' => $request->only(['search', 'include', 'exclude'])
         ]);
     }
 
@@ -31,7 +62,7 @@ class AgendaController extends Controller
      */
     public function create()
     {
-        //
+        
     }
 
     /**

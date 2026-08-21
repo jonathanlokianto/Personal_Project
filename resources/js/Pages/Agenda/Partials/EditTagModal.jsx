@@ -1,6 +1,6 @@
 import { useForm } from "@inertiajs/react";
 
-export default function CreateTagModal({ tagData = null }) {
+export default function CreateTagModal({ tagData = null, onCancel }) {
     const isEdit = !!tagData;
 
     const initialData = {

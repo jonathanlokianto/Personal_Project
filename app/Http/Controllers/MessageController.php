@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Message;
 use Illuminate\Http\Request;
 use App\Services\OpenAIService;
+use Exception;
 
 class MessageController extends Controller
 {
@@ -76,26 +77,41 @@ class MessageController extends Controller
     /**
      * Remove the specified resource from storage.
      */
+
     public function destroy()
     {
-        Message::truncate();
-        broadcast(new MessageHistoryTruncatedEvent())->toOthers();
-        broadcast(new RealtimeNotificationEvent("The chat history has been cleared.", "negative"));
-        return back();
+        try {
+            Message::truncate();
+            broadcast(new MessageHistoryTruncatedEvent())->toOthers();
+            return back();
+        } catch (Exception $e) {
+            return back()->withErrors(['message' => 'Failed to delete: ' . $e->getMessage()]);
+        }
     }
 
 
     public function stream(Request $request, OpenAIService $openAIService){
         $messages = $request->input('content', []);
+
         if(empty($messages)){
             return;
         }
 
         $userPrompt = $messages[0]['content'];
-        Message::create([
-            'role' => 'user',
-            'message_content' => $userPrompt,
-        ]);
+        $isResend = $messages[0]['isResend'] ?? false;
+
+        if(!$isResend){
+            Message::create([
+                'role' => 'user',
+                'message_content' => $userPrompt,
+            ]);
+        } else {
+            $lastMessage = Message::latest()->first();
+            if ($lastMessage && $lastMessage->role === 'assistant') {
+                $lastMessage->delete();
+            }
+        }
+        
 
         $callback = $openAIService->getStreamCallback();
 
@@ -104,6 +120,7 @@ class MessageController extends Controller
             'Cache-Control' => 'no-cache',
             'Content-Type' => 'text/event-stream',
             'X-Accel-Buffering' => 'no',
+            'Connection' => 'keep-alive',
         ]);
     }
 }

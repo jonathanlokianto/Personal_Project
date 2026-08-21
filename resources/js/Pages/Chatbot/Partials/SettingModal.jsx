@@ -1,21 +1,78 @@
-import { useForm } from "@inertiajs/react";
+import { router, useForm, usePage } from "@inertiajs/react";
+import { useEffect, useState } from "react";
 
 // Jangan lupa menangkap props onClose dari Index.jsx
 export default function SettingModal({ innerModalAreaRef, onClose }) {
-    // Menggunakan useForm dari Inertia untuk mengelola state form dengan mudah
-    const { data, setData, post, processing } = useForm({
-        preset_name: "",
-        model_name: "",
-        proxy_url: "",
-        api_key: "",
-        custom_prompt: "",
-    });
+    const { savedPresets, activePreset } = usePage().props;
+    const [isCreateNewPreset, setIsCreateNewPreset] = useState(false);
 
-    const handleSubmit = (e) => {
+    // console.log("Data dari Laravel:", savedPresets);
+
+    const initialData = {
+        id: activePreset?.id || "",
+        preset_name: activePreset?.preset_name || "",
+        model_name: activePreset?.model_name || "",
+        model_proxy_url: activePreset?.model_proxy_url || "",
+        model_api_key: activePreset?.model_api_key || "",
+        model_custom_prompt: activePreset?.model_custom_prompt || "",
+    };
+
+    const { data, setData, processing, errors, post } = useForm(initialData);
+    const [localSettingMemory, setLocalSettingMemory] =  useState(initialData);
+
+
+    useEffect(() => {
+        if (activePreset) {
+            setData({
+                id: activePreset.id || "",
+                preset_name: activePreset.preset_name || "",
+                model_name: activePreset.model_name || "",
+                model_proxy_url: activePreset.model_proxy_url || "",
+                model_api_key: activePreset.model_api_key || "",
+                model_custom_prompt: activePreset.model_custom_prompt || "",
+            });
+        }
+    }, [activePreset]);
+
+    const refreshPresetSettingFormData = (e) => {
+        e.stopPropagation();
+        setData({
+            id: "",
+            preset_name: "",
+            model_name: "",
+            model_proxy_url: "",
+            model_api_key: "",
+            model_custom_prompt: "",
+        });
+    };
+
+    const handleOnDropDownClick = (preset) => {
+        setData({
+            id: preset.id || "",
+            preset_name: preset.preset_name || "",
+            model_name: preset.model_name || "",
+            model_proxy_url: preset.model_proxy_url || "",
+            model_api_key: preset.model_api_key || "",
+            model_custom_prompt: preset.model_custom_prompt || "",
+        });
+        router.post(
+            route("chatbot.proxy-settings.set-active", preset.id),
+            {},
+            {
+                preserveScroll: true,
+                showProgress: false,
+                preserveState: true,
+            },
+        );
+    };
+
+    const handleSubmitPreset = (e) => {
         e.preventDefault();
-        // Nanti Anda bisa mengganti route-nya sesuai kebutuhan backend Anda
-        console.log("Menyimpan pengaturan: ", data);
-        // post(route('settings.store'), { onSuccess: () => onClose() });
+        // console.log("Menyimpan pengaturan: ", data);
+        post(route("chatbot.proxy-settings.store"), {
+            preserveScroll: true,
+            onSuccess: () => console.log("SUKSES"),
+        });
     };
 
     return (
@@ -43,69 +100,206 @@ export default function SettingModal({ innerModalAreaRef, onClose }) {
 
                 {/* START FORM AREA */}
                 <form
-                    onSubmit={handleSubmit}
+                    onSubmit={handleSubmitPreset}
                     className="flex flex-col grow overflow-hidden"
                 >
                     {/* Area yang bisa di-scroll */}
                     <div className="flex flex-col gap-5 px-8 pb-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
-                        
+                        {/* `Preset Dropdown` */}
+                        <label className="flex flex-col gap-1.5">
+                            <el-dropdown className="inline-block">
+                                <button
+                                    type="button"
+                                    className="bg-white/10
+                                    inline-flex w-full justify-center gap-x-1.5 
+                                    rounded-md
+                                    px-3 py-2
+                                    text-white text-sm font-semibold
+                                    inset-ring-1 inset-ring-white/5
+                                    hover:bg-white/20"
+                                >
+                                    {!isCreateNewPreset
+                                        ? data.preset_name || "Select Preset"
+                                        : "Create New Preset"}
+                                    <svg
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        data-slot="icon"
+                                        aria-hidden="true"
+                                        className="-mr-1 size-5 text-gray-400"
+                                    >
+                                        <path
+                                            d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                                            clipRule="evenodd"
+                                            fillRule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
+                                <el-menu
+                                    anchor="bottom middle"
+                                    popover="auto"
+                                    className="origin-top-right
+                                                w-56  
+                                                rounded-md 
+                                                bg-gray-800 
+                                                outline-1 -outline-offset-1 outline-white/10 
+                                                transition transition-discrete [--anchor-gap:--spacing(2)] 
+                                                data-closed:scale-95 data-closed:transform data-closed:opacity-0 
+                                                data-enter:duration-100 data-enter:ease-out data-leave:duration-75 
+                                                data-leave:ease-in"
+                                >
+                                    <div className="py-1">
+                                        {savedPresets?.length > 0 ? (
+                                            <>
+                                                {savedPresets.map((preset) => {
+                                                    const isCentangActive =
+                                                        preset.id === data.id;
+                                                    return (
+                                                        <button
+                                                            className={`
+                                                            block w-full
+                                                            text-left px-4 py-2 text-sm text-gray-300 
+                                                            hover:bg-white/10 hover:text-white
+                                                            ${preset.preset_isActive ? "relative" : ""}
+                                                        `}
+                                                            key={preset.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                handleOnDropDownClick(
+                                                                    preset,
+                                                                );
+                                                                setIsCreateNewPreset(
+                                                                    false,
+                                                                );
+                                                            }}
+                                                        >
+                                                            {preset?.preset_name ||
+                                                                ""}
+                                                            {isCentangActive && (
+                                                                <>
+                                                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-green-400">
+                                                                        <svg
+                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                            width="24"
+                                                                            height="24"
+                                                                            viewBox="0 0 24 24"
+                                                                            fill="none"
+                                                                            stroke="#d1d5db"
+                                                                            strokeWidth="2"
+                                                                            strokeLinecap="round"
+                                                                            strokeLinejoin="round"
+                                                                        >
+                                                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                                                        </svg>
+                                                                    </span>
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </>
+                                        ) : (
+                                            <span className="block px-4 py-2 text-sm text-gray-500 italic">
+                                                NO PRESETS YET
+                                            </span>
+                                        )}
+
+                                        <button
+                                            className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/10 hover:text-white"
+                                            type="button"
+                                            onClick={(e) => {
+                                                refreshPresetSettingFormData(e);
+                                                setIsCreateNewPreset(true);
+                                                // setData(data.preset_name, "Create New Preset");
+                                            }}
+                                        >
+                                            Create New Preset
+                                        </button>
+                                    </div>
+                                </el-menu>
+                            </el-dropdown>
+                        </label>
+
                         {/* Input 1: Preset Name */}
                         <label className="flex flex-col gap-1.5">
-                            <span className="text-sm font-semibold text-gray-300">Preset Name</span>
+                            <span className="text-sm font-semibold text-gray-300">
+                                Preset Name
+                            </span>
                             <input
                                 type="text"
                                 className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
                                 placeholder="e.g. My Custom AI"
                                 value={data.preset_name}
-                                onChange={(e) => setData("preset_name", e.target.value)}
+                                onChange={(e) =>
+                                    setData("preset_name", e.target.value)
+                                }
                             />
                         </label>
 
                         {/* Input 2: Model Name */}
                         <label className="flex flex-col gap-1.5">
-                            <span className="text-sm font-semibold text-gray-300">Model Name</span>
+                            <span className="text-sm font-semibold text-gray-300">
+                                Model Name
+                            </span>
                             <input
                                 type="text"
                                 className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
                                 placeholder="e.g. gpt-4-turbo"
                                 value={data.model_name}
-                                onChange={(e) => setData("model_name", e.target.value)}
+                                onChange={(e) =>
+                                    setData("model_name", e.target.value)
+                                }
                             />
                         </label>
 
                         {/* Input 3: Proxy URL */}
                         <label className="flex flex-col gap-1.5">
-                            <span className="text-sm font-semibold text-gray-300">Proxy URL</span>
+                            <span className="text-sm font-semibold text-gray-300">
+                                Proxy URL
+                            </span>
                             <input
                                 type="url"
                                 className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
                                 placeholder="e.g. https://openrouter.ai/api/v1"
-                                value={data.proxy_url}
-                                onChange={(e) => setData("proxy_url", e.target.value)}
+                                value={data.model_proxy_url}
+                                onChange={(e) =>
+                                    setData("model_proxy_url", e.target.value)
+                                }
                             />
                         </label>
 
                         {/* Input 4: API Key */}
                         <label className="flex flex-col gap-1.5">
-                            <span className="text-sm font-semibold text-gray-300">API Key</span>
+                            <span className="text-sm font-semibold text-gray-300">
+                                API Key
+                            </span>
                             <input
                                 type="password"
                                 className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
                                 placeholder="sk-..."
-                                value={data.api_key}
-                                onChange={(e) => setData("api_key", e.target.value)}
+                                value={data.model_api_key}
+                                onChange={(e) =>
+                                    setData("model_api_key", e.target.value)
+                                }
                             />
                         </label>
 
                         {/* Input 5: Custom Prompt */}
                         <label className="flex flex-col gap-1.5">
-                            <span className="text-sm font-semibold text-gray-300">Custom Prompt (System)</span>
+                            <span className="text-sm font-semibold text-gray-300">
+                                Custom Prompt (System)
+                            </span>
                             <textarea
                                 className="bg-gray-700/50 border border-gray-600 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent"
                                 rows={4}
                                 placeholder="Override the system prompt for this proxy..."
-                                value={data.custom_prompt}
-                                onChange={(e) => setData("custom_prompt", e.target.value)}
+                                value={data.model_custom_prompt}
+                                onChange={(e) =>
+                                    setData(
+                                        "model_custom_prompt",
+                                        e.target.value,
+                                    )
+                                }
                             />
                         </label>
                     </div>

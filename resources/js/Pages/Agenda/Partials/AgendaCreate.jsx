@@ -51,190 +51,182 @@ export default function AgendaCreate({
                       onCancel();
                   },
               });
-
-        {
-        }
     };
 
     return (
-        <>
-            <div className="bg-white flex grow flex-col rounded-lg">
-                <div className="flex justify-center p-5">
-                    <h1 className="font-extrabold font-stretch-ultra-expanded">
-                        {isEdit ? "CREATE NEW " : "EDIT "}AGENDA
-                    </h1>
+        <div className="bg-white flex flex-col grow rounded-xl shadow-sm border border-gray-200 overflow-hidden w-full">
+            {/* Header Form */}
+            <div className="flex justify-center items-center p-6 bg-gray-50 border-b border-gray-100">
+                <h1 className="text-xl font-extrabold tracking-widest text-gray-800 uppercase">
+                    {isEdit ? "EDIT " : "CREATE NEW "}AGENDA
+                </h1>
+            </div>
+
+            {/* Form Body */}
+            <form
+                className="p-6 md:p-8 flex flex-col gap-6"
+                onSubmit={handleSubmit}
+            >
+                {/* Input Agenda Content */}
+                <div className="flex flex-col gap-2">
+                    <label
+                        htmlFor="content"
+                        className="text-sm font-semibold text-gray-700"
+                    >
+                        Your Agenda <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                        id="content"
+                        type="text"
+                        value={data.content}
+                        onChange={(e) => setData("content", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm transition-all 
+                                   focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        placeholder="What do you plan to do?"
+                        required
+                    />
+                    {errors.content && (
+                        <span className="text-red-500 text-xs font-medium">
+                            {errors.content}
+                        </span>
+                    )}
                 </div>
 
-                <form
-                    className="mx-8 pb-10 flex flex-col gap-6"
-                    onSubmit={handleSubmit}
-                >
-                    {/*  */}
-                    {/* Input Agenda Content */}
-                    {/*  */}
-                    <div className="flex flex-col gap-2">
-                        <label
-                            htmlFor="content"
-                            className="font-semibold text-gray-700"
-                        >
-                            Your Agenda <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            id="content"
-                            type="text"
-                            value={data.content}
-                            onChange={(e) => setData("content", e.target.value)}
-                            className="border border-gray-300 rounded-md p-2 
-                                    focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            placeholder="What do you plan to do?"
-                            required
-                        />
-                        {errors.content && (
-                            <span className="text-red-500 text-sm">
-                                {errors.content}
-                            </span>
-                        )}
-                    </div>
-                    {/*  */}
-                    {/* Input Note */}
-                    {/*  */}
-                    <div className="flex flex-col gap-2">
-                        <label
-                            htmlFor="note"
-                            className="font-semibold text-gray-700"
-                        >
-                            Additional Note
-                            <span className="ml-2 text-gray-400 font-normal">
-                                *Optional
-                            </span>
-                        </label>
-                        <textarea
-                            id="note"
-                            type="text"
-                            rows={3}
-                            value={data.note}
-                            onChange={(e) => setData("note", e.target.value)}
-                            className="border border-gray-300 rounded-md p-2 
-                                    focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            placeholder="What do you plan to do?"
-                        />
-                        {errors.content && (
-                            <span className="text-red-500 text-sm">
-                                {errors.note}
-                            </span>
-                        )}
-                    </div>
-                    {/*  */}
-                    {/* Current Progress */}
-                    {/*  */}
-                    <div className="flex flex-col gap-2">
-                        <label
-                            htmlFor="progress"
-                            className="font-semibold text-gray-700"
-                        >
-                            Current Progress
-                            <span className="ml-2 text-gray-400 font-normal">
-                                {data.progress}%
-                            </span>
-                        </label>
+                {/* Input Note */}
+                <div className="flex flex-col gap-2">
+                    <label
+                        htmlFor="note"
+                        className="text-sm font-semibold text-gray-700 flex items-center justify-between"
+                    >
+                        <span>Additional Note</span>
+                        <span className="text-gray-400 font-normal text-xs italic">
+                            *Optional
+                        </span>
+                    </label>
+                    <textarea
+                        id="note"
+                        rows={3}
+                        value={data.note}
+                        onChange={(e) => setData("note", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm transition-all 
+                                   focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-y"
+                        placeholder="Any extra details?"
+                    />
+                    {errors.note && (
+                        <span className="text-red-500 text-xs font-medium">
+                            {errors.note}
+                        </span>
+                    )}
+                </div>
 
+                {/* Current Progress */}
+                <div className="flex flex-col gap-3">
+                    <label className="text-sm font-semibold text-gray-700 flex items-center justify-between">
+                        <span>Current Progress</span>
+                        <span className="text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded-md text-xs">
+                            {data.progress}%
+                        </span>
+                    </label>
+                    
+                    <div className="px-1">
                         <AgendaProgressBar
                             currentProgress={data.progress}
                             onProgressChange={handleProgressClick}
                         />
-
-                        {errors.progress && (
-                            <span className="text-red-500 text-sm">
-                                {errors.progress}
-                            </span>
-                        )}
                     </div>
 
-                    {/*  */}
-                    {/* Is Suspended? */}
-                    {/*  */}
-                    <div className="flex gap-2">
-                        <label
-                            htmlFor="isSuspended"
-                            className="font-semibold text-gray-700"
-                        >
-                            Status:
-                            <span
-                                className={`ml-2 items-end inline-block w-24 ${
-                                    data.isSuspended
-                                        ? "text-red-500"
-                                        : "text-green-500"
-                                }`}
-                            >
-                                {data.isSuspended ? "Suspended" : "Active"}
-                            </span>
-                        </label>
+                    {errors.progress && (
+                        <span className="text-red-500 text-xs font-medium">
+                            {errors.progress}
+                        </span>
+                    )}
+                </div>
+
+                {/* Is Suspended? (Modern UI Toggle Switch) */}
+                <div className="flex flex-col gap-2">
+                    <span className="text-sm font-semibold text-gray-700">Agenda Status</span>
+                    <label
+                        htmlFor="isSuspended"
+                        className="relative inline-flex items-center cursor-pointer w-max"
+                    >
                         <input
-                            className="items-end sr-only peer"
                             id="isSuspended"
                             type="checkbox"
+                            className="sr-only peer"
                             checked={data.isSuspended}
-                            onChange={(e) => {
-                                setData("isSuspended", e.target.checked);
-                            }}
+                            onChange={(e) =>
+                                setData("isSuspended", e.target.checked)
+                            }
                         />
-                        {errors.isSuspended && (
-                            <span className="text-red-500 text-sm">
-                                {errors.isSuspended}
-                            </span>
+                        {/* Track & Thumb */}
+                        <div className="w-11 h-6 bg-green-500 peer-focus:outline-none rounded-full peer 
+                                      peer-checked:after:translate-x-full peer-checked:after:border-white 
+                                      after:content-[''] after:absolute after:top-[2px] after:left-[2px] 
+                                      after:bg-white after:border-gray-300 after:border after:rounded-full 
+                                      after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500">
+                        </div>
+                        <span
+                            className={`ml-3 text-sm font-bold ${
+                                data.isSuspended ? "text-red-500" : "text-green-600"
+                            }`}
+                        >
+                            {data.isSuspended ? "Suspended" : "Active"}
+                        </span>
+                    </label>
+                    {errors.isSuspended && (
+                        <span className="text-red-500 text-xs font-medium">
+                            {errors.isSuspended}
+                        </span>
+                    )}
+                </div>
+
+                {/* Add Tags */}
+                <div className="flex flex-col gap-2 border-t border-gray-100 pt-4">
+                    <label className="text-sm font-semibold text-gray-700 flex items-center justify-between">
+                        <span>Tags</span>
+                        <span className="text-gray-400 font-normal text-xs italic">
+                            *Optional
+                        </span>
+                    </label>
+
+                    <div className="flex flex-wrap w-full gap-2 p-4 bg-gray-50 border border-gray-100 rounded-lg min-h-[4rem] items-center">
+                        {availableTags?.length > 0 ? (
+                            availableTags.map((tag) => (
+                                <TagBubble
+                                    key={tag.id}
+                                    tag={tag}
+                                    isSelected={data.tags.includes(tag.id)}
+                                    onToggle={() => handleToggleTag(tag.id)}
+                                />
+                            ))
+                        ) : (
+                            <p className="text-sm text-gray-400 italic">No Tags Available</p>
                         )}
                     </div>
+                </div>
 
-                    <div className="flex flex-col gap-2">
-                        <label>
-                            Add Tags
-                            <span className="text-gray-400 ml-2">
-                                *Optional
-                            </span>
-                        </label>
-
-                        <div className="flex flex-wrap grow w-full gap-4 p-2">
-                            {availableTags?.length > 0 ? (
-                                availableTags.map((tag) => (
-                                    <TagBubble
-                                        key={tag.id}
-                                        tag={tag}
-                                        isSelected={data.tags.includes(tag.id)}
-                                        onToggle={() => handleToggleTag(tag.id)}
-                                    />
-                                ))
-                            ) : (
-                                <p>No Tags Available</p>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex justify-center items-center gap-5">
-                        <button
-                            type="submit"
-                            disabled={processing}
-                            className="flex items-center justify-center w-16 h-8 p-1
-                                    bg-green-500 hover:bg-green-600
-                                    transition-all duration-300
-                                    rounded-md
-                                    text-white"
-                        >
-                            {isEdit ? "Update" : "Submit"}
-                        </button>
-                        <button
-                            type="button"
-                            className="flex items-center justify-center w-16 h-8 p-1
-                                    bg-red-500 hover:bg-red-600
-                                    transition-all duration-300
-                                    rounded-md
-                                    text-white"
-                            onClick={onCancel}
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </>
+                {/* Action Buttons */}
+                <div className="flex justify-end items-center gap-3 mt-4">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        disabled={processing}
+                        className="px-6 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 
+                                   rounded-lg shadow-sm hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={processing}
+                        className="px-6 py-2.5 text-sm font-semibold text-white bg-green-600 border border-transparent 
+                                   rounded-lg shadow-sm hover:bg-green-700 focus:ring-2 focus:ring-green-500/50 
+                                   transition-all duration-200 disabled:opacity-50"
+                    >
+                        {isEdit ? "Update Agenda" : "Save Agenda"}
+                    </button>
+                </div>
+            </form>
+        </div>
     );
 }

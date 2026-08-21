@@ -12,9 +12,10 @@ class DefaultProxySettingSeeder extends Seeder
     {
         //VARIABLE
         $PRESET_NAME = config('openai.preset_name');
-        $MODEL_PROXY_URL = config('openai.api_key');
-        $MODEL_NAME = config('openai.model_provider_uri');
-        $MODEL_API = config('openai.model_name');
+        $MODEL_PROXY_URL = config('openai.model_provider_uri');
+        $MODEL_NAME = config('openai.model_name');
+        $MODEL_API = config('openai.api_key');
+        $MODEL_CUSTOM_PROMPT = config('openai.model_custom_prompt');
 
         ChatProxySetting::unguard();
 
@@ -44,7 +45,7 @@ class DefaultProxySettingSeeder extends Seeder
                 'model_name'          => $MODEL_NAME,
                 'model_proxy_url'     => $MODEL_PROXY_URL,
                 'model_api_key'       => $MODEL_API,
-                'model_custom_prompt' => '',
+                'model_custom_prompt' => $MODEL_CUSTOM_PROMPT,
                 'preset_isActive'     => $shouldBeActive, // Gunakan variabel logika di atas
                 'preset_isDefault'    => true,
             ]

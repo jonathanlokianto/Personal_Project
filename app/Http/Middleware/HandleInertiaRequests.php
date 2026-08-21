@@ -41,7 +41,14 @@ class HandleInertiaRequests extends Middleware
                 'type' => fn() => $request->session()->get('type'),
                 'message' => fn() => $request->session()->get('message'),
             ],
-            //
+            'savedPresets' => fn () => \App\Models\ChatProxySetting::orderBy('created_at', 'asc')->get(),
+            'activePreset' => fn() => \App\Models\ChatProxySetting::where('preset_isActive', true)->first(),
+
+            'Mp3Downloader' => [
+                'download_url' => fn() => $request->session()->get('download_url'),
+                'download_title'=> fn()=> $request->session()->get('download_title'),
+                'download_thumbnail'=> fn()=> $request->session()->get('download_thumbnail')
+            ]
         ];
     }
 }

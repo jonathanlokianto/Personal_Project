@@ -5,6 +5,7 @@ import TagCreate from "./TagCreate";
 export default function TagList({ availableTags, onCancel }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedTag, setSelectedTag] = useState(null);
+
     const handleOpenTagEditor = (tag = null) => {
         setSelectedTag(tag);
         setIsModalOpen(true);
@@ -26,69 +27,79 @@ export default function TagList({ availableTags, onCancel }) {
     };
 
     return (
-        <>
-            <div className="flex bg-white flex grow flex-col rounded-lg p-6 m-4">
-                <div
-                    className={`relative transition-all duration-300 
-                            ${isModalOpen && "opacity-50 pointer-events-none"}`}
-                >
-                    <div className="flex justify-center p-5">
-                        <h1 className="font-extrabold font-stretch-ultra-expanded">
-                            TAG LIST
-                        </h1>
-                    </div>
+        <div className="flex flex-col w-full h-full relative">
+            {/* Container Utama dengan efek mengecil/redup saat modal terbuka */}
+            <div
+                className={`bg-white flex flex-col grow rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300 
+                ${isModalOpen ? "opacity-50 pointer-events-none scale-[0.98]" : "scale-100"}`}
+            >
+                {/* Header */}
+                <div className="flex justify-center items-center p-6 bg-gray-50 border-b border-gray-100">
+                    <h1 className="text-xl font-extrabold tracking-widest text-gray-800 uppercase">
+                        TAG LIST
+                    </h1>
+                </div>
 
-                    <div className="flex flex-wrap grow w-full gap-4">
+                {/* Body Content */}
+                <div className="p-6 md:p-8 flex flex-col grow">
+                    
+                    {/* Area Tags & Add Button */}
+                    <div className="flex flex-wrap w-full gap-4 items-center min-h-[5rem]">
                         {availableTags?.length > 0 ? (
-                            <>
-                                {availableTags.map((tag) => (
-                                    <TagBubble
-                                        key={tag.id}
-                                        tag={tag}
-                                        onToggle={() =>
-                                            handleOpenTagEditor(tag)
-                                        }
-                                    />
-                                ))}
-
-                                <button
-                                    className="flex items-center justify-center rounded-md text-white w-14
-                                        hover:cursor-pointer p-2 transition-all duration:300 hover:scale-125 
-                                        bg-blue-600 hover:bg-blue-500"
-                                    type="button"
-                                    onClick={() => handleOpenTagEditor(null)}
-                                >
-                                    <h1 className="font-bold">+</h1>
-                                </button>
-                            </>
+                            availableTags.map((tag) => (
+                                <TagBubble
+                                    key={tag.id}
+                                    tag={tag}
+                                    onToggle={() => handleOpenTagEditor(tag)}
+                                />
+                            ))
                         ) : (
-                            <h1>TAG LIST IS EMPTY</h1>
+                            /* Desain Empty State Baru: Kotak dashed sejajar dengan tombol + */
+                            <div className="flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-lg px-6 py-2.5 h-10">
+                                <span className="text-sm font-semibold tracking-wide text-gray-400">
+                                    TAG LIST IS EMPTY
+                                </span>
+                            </div>
                         )}
+
+                        {/* Tombol Add (+) Modern */}
+                        <button
+                            type="button"
+                            onClick={() => handleOpenTagEditor(null)}
+                            className="flex items-center justify-center w-10 h-10 rounded-lg text-blue-600 bg-blue-50 border border-blue-200 
+                                       hover:bg-blue-600 hover:text-white hover:shadow-md hover:scale-105 
+                                       transition-all duration-300 cursor-pointer shrink-0"
+                            title="Create New Tag"
+                        >
+                            <span className="font-bold text-xl leading-none">
+                                +
+                            </span>
+                        </button>
                     </div>
-                    <div className="flex justify-center items-center gap-5">
+
+                    {/* Footer / Back Button */}
+                    <div className="flex justify-center items-center mt-auto pt-12 pb-2">
                         <button
                             type="button"
                             onClick={() => onCancel()}
-                            className="flex items-center justify-center w-30 h-8 p-1
-                                    bg-red-500 hover:bg-red-600 hover:cursor-pointer
-                                    transition-all duration-300
-                                    rounded-md mt-20
-                                    text-white"
+                            className="px-8 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 
+                                       rounded-lg shadow-sm hover:bg-gray-100 transition-all duration-200"
                         >
                             Go Back
                         </button>
                     </div>
                 </div>
-
-                {isModalOpen && (
-                    <div className="flex items-center justify-center inset-0 fixed z-50 bg-black/50">
-                        <TagCreate
-                            tagData={selectedTag}
-                            onExit={handleExitTagCreator}
-                        />
-                    </div>
-                )}
             </div>
-        </>
+
+            {/* Modal Overlay / Backdrop */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity">
+                    <TagCreate
+                        tagData={selectedTag}
+                        onExit={handleExitTagCreator}
+                    />
+                </div>
+            )}
+        </div>
     );
 }

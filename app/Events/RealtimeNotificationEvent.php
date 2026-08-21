@@ -36,7 +36,7 @@ class RealtimeNotificationEvent implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new channel('notification-channel'),
+            new Channel('notification-channel'),
         ];
     }
 
