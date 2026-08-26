@@ -37,7 +37,7 @@ class Mp3DownloaderController extends Controller
         ]);
 
         $url = $request->url;
-        $ytDlpPath = storage_path('app/bin/yt-dlp.exe');
+        $ytDlpPath = storage_path('app/bin/yt-dlp_linux');
         $ffmpegPath = storage_path('app/bin');
 
 
