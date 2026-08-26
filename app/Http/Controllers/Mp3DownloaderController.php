@@ -90,7 +90,7 @@ class Mp3DownloaderController extends Controller
                 '-f', 'ba',
                 '-x',
                 '--audio-format', 'mp3',
-                '--ffmpeg-location', $ffmpegPath,
+                // '--ffmpeg-location', $ffmpegPath,
                 '-o', $outputPath,
                 '--no-playlist',
                 $url
