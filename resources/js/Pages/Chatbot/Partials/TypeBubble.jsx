@@ -1,19 +1,28 @@
 import { useState } from "react";
 
-export default function TypeBubble({ onMessageSend, isStreaming, onStopStream }) {
+export default function TypeBubble({
+    onMessageSend,
+    isStreaming,
+    onStopStream,
+}) {
     const [messageContent, setMessageContent] = useState("");
-
-    const messageOnSend = (e) => {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const messageOnSend = async (e) => {
         e.preventDefault();
-        if (!messageContent.trim() || isStreaming) return;
+        if (!messageContent.trim() || isStreaming || isSubmitting) return;
 
-        // Langsung lempar teks ke fungsi streaming di Index.jsx
-        if (onMessageSend) {
-            onMessageSend(messageContent);
+        setIsSubmitting(true);
+
+        try {
+            if (onMessageSend) {
+                await onMessageSend(messageContent);
+            }
+            setMessageContent("");
+        } finally {
+            setTimeout(() => {
+                setIsSubmitting(false);
+            }, 300);
         }
-
-        // Bersihkan teks input secara instan tanpa menunggu reload halaman
-        setMessageContent("");
     };
 
     const handleKeyDown = (e) => {
@@ -48,11 +57,14 @@ export default function TypeBubble({ onMessageSend, isStreaming, onStopStream })
                     value={messageContent}
                     onChange={(e) => setMessageContent(e.target.value)}
                     onKeyDown={handleKeyDown}
+                    disabled={isStreaming}
                 />
 
                 <button
                     type={isStreaming ? "button" : "submit"}
-                    disabled={!isStreaming && !messageContent.trim()}
+                    disabled={
+                        (!isStreaming && !messageContent.trim()) || isSubmitting
+                    }
                     onClick={isStreaming ? onStopStream : undefined}
                     className={`p-3 mr-1 mb-0.5 rounded-2xl text-white transition-all duration-300 shrink-0 shadow-md ${
                         isStreaming
@@ -62,7 +74,6 @@ export default function TypeBubble({ onMessageSend, isStreaming, onStopStream })
                     title={isStreaming ? "Stop Generating" : "Send Message"}
                 >
                     {isStreaming ? (
-                        // Ikon Stop (Kotak)
                         <svg
                             className="w-5 h-5 animate-pulse"
                             fill="currentColor"
@@ -78,7 +89,6 @@ export default function TypeBubble({ onMessageSend, isStreaming, onStopStream })
                             />
                         </svg>
                     ) : (
-                        // Ikon Send (Pesawat Kertas)
                         <svg
                             className="w-5 h-5 transform rotate-90"
                             fill="none"

@@ -75,6 +75,7 @@ export default function Index({ chatHistory }) {
         restarted = false,
         restartedChatId = null,
     ) => {
+        setParsedStreamText("");
         const tempUserMessage = {
             id: `temp-${Date.now()}`,
             role: "user",
@@ -117,12 +118,15 @@ export default function Index({ chatHistory }) {
     // 3. Tarik balasan utuh AI dari database setelah proses streaming selesai
     useEffect(() => {
         if (!isStreaming && data) {
-            router.reload({
-                only: ["chatHistory"],
-                preserveScrolls: true,
-                preserveState: true,
-            });
-            scrollToBottom();
+            const timer = setTimeout(() => {
+                router.reload({
+                    only: ["chatHistory"],
+                    preserveScrolls: true,
+                    preserveState: true,
+                });
+                scrollToBottom();
+            }, 500);
+            return () => clearTimeout(timer);
         }
     }, [isStreaming]);
 
