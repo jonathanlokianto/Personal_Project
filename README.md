@@ -14,7 +14,7 @@ This repository (`Personal_Project`) houses my personal data management dashboar
 
 By combining the robustness of **Laravel** for backend logic with the reactive UI of **React**, bridged seamlessly via **Inertia.js**, this application provides a Single Page Application (SPA) experience without the complexity of traditional API routing. **Tailwind CSS** ensures the interface is sleek, responsive, and easy to navigate on any device.
 
-## 🛠️ Built With
+## Built With
 
 *   **Backend:** [Laravel](https://laravel.com/) (PHP)
 *   **Frontend:** [React](https://reactjs.org/)
